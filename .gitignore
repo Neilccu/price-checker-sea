@@ -1,0 +1,30 @@
+# Entorno Virtual
+# Ignora la carpeta que contiene todas las librerías instaladas
+venv/
+*.venv
+
+# Archivos de caché de Python
+# Estos se generan automáticamente y no deben ser versionados
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Archivos de bases de datos locales
+# Si usas SQLite para pruebas, no subas el archivo de la base de datos
+*.sqlite3
+*.db
+
+# Archivos de configuración y secretos
+# ¡MUY IMPORTANTE! Nunca subas archivos con contraseñas o claves de API
+.env
+config.ini
+
+# Archivos de IDEs y editores
+# Carpetas de configuración de editores como VS Code o PyCharm
+.vscode/
+.idea/
+
+# Archivos del sistema operativo
+.DS_Store
+Thumbs.db
