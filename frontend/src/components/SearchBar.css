@@ -1,0 +1,20 @@
+/* src/components/SearchBar.css */
+.search-bar-container {
+  width: 100%;
+  margin: 20px 0;
+}
+
+.search-input {
+  width: 100%;
+  padding: 15px;
+  font-size: 1.2rem;
+  border-radius: 8px;
+  border: 2px solid #ddd;
+  box-sizing: border-box; /* Importante para que el padding no desborde el ancho */
+  transition: border-color 0.3s;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #007bff;
+}

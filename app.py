@@ -1,5 +1,5 @@
 import pyodbc
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 
 app = Flask(__name__)
@@ -9,7 +9,7 @@ CORS(app) # Habilita CORS para toda la aplicación
 # Asegúrate de tener instalado el driver ODBC para SQL Server
 SERVER = 'NeilC-SRV' # Nombre del servidor o IP
 DATABASE = 'MotoliderDB'
-USERNAME = 'Analista'
+USERNAME = 'dev'
 PASSWORD = '123456'
 
 connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={SERVER};DATABASE={DATABASE};UID={USERNAME};PWD={PASSWORD}'
@@ -84,7 +84,15 @@ def get_categories():
     finally:
         conn.close()
 
+# Este código le dice a Flask: "Si alguien pide una URL que empiece con /images/, 
+# busca el archivo con ese nombre dentro de la carpeta product_images y envíalo."
+
+@app.route('/images/<filename>')
+def serve_image(filename):
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+
 # --- El Bloque de Arranque ---
 # Este código solo se ejecuta cuando corres el script directamente con "python app.py"
+
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, host='0.0.0.0')

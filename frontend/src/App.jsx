@@ -1,35 +1,53 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+// src/App.jsx (versión final y completa)
+
+import { useState } from 'react';
+import api from './services/api';
+import './App.css';
+
+// Paso 1: Importamos los componentes que creamos
+import SearchBar from './components/SearchBar';
+import ProductList from './components/ProductList';
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [products, setProducts] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSearch = async (searchTerm) => {
+    // Evitamos búsquedas vacías o muy cortas para no sobrecargar el backend
+    if (!searchTerm || searchTerm.length < 3) {
+      setProducts([]);
+      return;
+    }
+    setIsLoading(true);
+    try {
+      const response = await api.searchProducts(searchTerm);
+
+        // Línea de depuración:
+      console.log("Datos recibidos del backend:", response.data); 
+
+      setProducts(response.data);
+    } catch (error) {
+      console.error("Error al buscar productos:", error);
+    }
+    setIsLoading(false);
+  };
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <div className="app-container">
+      <header className="app-header">
+        <h1>Lector de Precios</h1>
+        {/* Paso 2: Usamos el componente SearchBar aquí */}
+        <SearchBar onSearch={handleSearch} />
+      </header>
+      <main>
+        {isLoading 
+          ? <p>Cargando productos...</p>
+          // Paso 3: Y usamos el componente ProductList aquí
+          : <ProductList products={products} />
+        }
+      </main>
+    </div>
+  );
 }
 
-export default App
+export default App;
