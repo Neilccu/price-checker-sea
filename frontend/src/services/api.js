@@ -14,5 +14,12 @@ export default {
     },
     searchProducts(searchTerm) {
         return apiClient.get(`/product/${searchTerm}`);
-    }
+    },
+    uploadProductImage(formData) {
+    return apiClient.post('/product/upload_image', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  }
 };

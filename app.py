@@ -1,6 +1,8 @@
 import pyodbc
 from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
+import os
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 CORS(app) # Habilita CORS para toda la aplicación
@@ -23,10 +25,19 @@ def get_db_connection():
         return None
 
 # --- Creación de la base de datos para las imágenes (si no existe) ---
-# Usaremos SQLite para simplicidad. Flask lo manejará automáticamente.
-# Esta es una alternativa a crear una nueva tabla en tu SQL Server principal.
-# (Más adelante crearemos la tabla y los endpoints para las imágenes)
 
+# --- CONFIGURACIÓN DEL DIRECTORIO DE IMÁGENES ---
+# Define el nombre de la carpeta donde se guardarán las imágenes
+UPLOAD_FOLDER = 'product_images' 
+# Le dice a Flask dónde está esa carpeta
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+# Se asegura de que la carpeta exista. Si no, la crea.
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
+# --------------------------------------------------
+
+# ... (aquí empiezan tus @app.route, como la conexión a la BD, etc.)
 
 @app.route('/api/product/<search_term>', methods=['GET'])
 def get_product(search_term):
@@ -38,16 +49,21 @@ def get_product(search_term):
     # Consulta para buscar por código de producto, descripción o código de barras
     # Usamos LIKE para búsquedas parciales
     query = """
-        SELECT
-            CodProd,
-            Descrip,
-            Precio1, -- Ajusta los campos de precio que necesites
-            Precio2,
-            Precio3,
-            Marca,   -- Ejemplo de campo adicional
-            Refere   -- Código de barras
-        FROM SAPROD
-        WHERE CodProd LIKE ? OR Descrip LIKE ? OR Refere = ?
+    SELECT
+        p.CodProd,
+        p.Descrip,
+        p.Precio1,
+        p.Precio2,
+        p.Precio3,
+        p.Marca,
+        p.Refere,
+        i.ImagePath
+    FROM 
+        SAPROD AS p
+    LEFT JOIN 
+        product_images AS i ON p.CodProd = i.CodProd
+    WHERE 
+        p.CodProd LIKE ? OR p.Descrip LIKE ? OR p.Refere = ?
     """
     # El formato de los parámetros puede variar ligeramente según el driver ODBC
     params = (f'%{search_term}%', f'%{search_term}%', search_term)
@@ -93,6 +109,47 @@ def serve_image(filename):
 
 # --- El Bloque de Arranque ---
 # Este código solo se ejecuta cuando corres el script directamente con "python app.py"
+
+@app.route('/api/product/upload_image', methods=['POST'])
+def upload_image():
+    if 'image' not in request.files or 'CodProd' not in request.form:
+        return jsonify({"error": "Faltan datos (imagen o CodProd)"}), 400
+
+    file = request.files['image']
+    cod_prod = request.form['CodProd']
+
+    if file.filename == '':
+        return jsonify({"error": "No se seleccionó ningún archivo"}), 400
+
+    if file:
+        # Crea un nombre de archivo seguro para evitar problemas
+        filename = secure_filename(f"{cod_prod}.jpg") # Forzamos la extensión
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(filepath)
+
+        # Lógica para guardar la ruta en la base de datos
+        conn = get_db_connection()
+        if not conn:
+            return jsonify({"error": "No se pudo conectar a la base de datos"}), 500
+
+        cursor = conn.cursor()
+        query = """
+            MERGE product_images AS target
+            USING (SELECT ? AS CodProd, ? AS ImagePath) AS source
+            ON (target.CodProd = source.CodProd)
+            WHEN MATCHED THEN
+                UPDATE SET ImagePath = source.ImagePath
+            WHEN NOT MATCHED THEN
+                INSERT (CodProd, ImagePath) VALUES (source.CodProd, source.ImagePath);
+        """
+        try:
+            cursor.execute(query, cod_prod, filename)
+            conn.commit()
+            return jsonify({"success": "Imagen subida correctamente", "path": filename}), 201
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+        finally:
+            conn.close()
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0')

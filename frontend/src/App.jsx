@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import api from './services/api';
 import './App.css';
+import AdminPanel from './components/AdminPanel';
 
 // Paso 1: Importamos los componentes que creamos
 import SearchBar from './components/SearchBar';
@@ -13,6 +14,8 @@ function App() {
   const [products, setProducts] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [categories, setCategories] = useState([]);
+  const [isAdminView, setIsAdminView] = useState(false);
+  const [error, setError] = useState(null);
 
     // --- EFECTOS ---
   // Este useEffect se ejecuta UNA SOLA VEZ cuando el componente se carga
@@ -51,21 +54,41 @@ function App() {
 
   return (
     <div className="app-container">
-      <header className="app-header">
-        <h1>Lector de Precios</h1>
-        {/* Paso 2: Usamos el componente SearchBar aquí */}
-        <SearchBar onSearch={handleSearch} />
-      </header>
+      {/* 1. Barra de navegación para cambiar de vista */}
+      <nav className="app-nav">
+        <h2>Mi Aplicación</h2>
+        <button onClick={() => setIsAdminView(!isAdminView)} className="nav-button">
+          {isAdminView ? 'Ver Lector' : 'Administrar'}
+        </button>
+      </nav>
 
-      <CategoryList categories={categories} onCategoryClick={handleSearch} />
-
-      <main>
-        {isLoading 
-          ? <p>Cargando productos...</p>
-          // Paso 3: Y usamos el componente ProductList aquí
-          : <ProductList products={products} />
-        }
-      </main>
+      {/* 2. La lógica de decisión (Renderizado Condicional) */}
+      {isAdminView ? (
+        // Si isAdminView es TRUE, muestra solo esto:
+        <AdminPanel />
+      ) : (
+        // Si isAdminView es FALSE, muestra todo esto:
+        <>
+          <header className="app-header">
+            <h1>Lector de Precios</h1>
+            <SearchBar onSearch={handleSearch} />
+          </header>
+          
+          <CategoryList categories={categories} onCategoryClick={handleSearch} />
+          
+          <main>
+            {isLoading ? (
+              <p>Cargando...</p>
+            ) : error ? (
+              <p className="error-message">{error}</p>
+            ) : products.length > 0 ? (
+              <ProductList products={products} />
+            ) : (
+              <p className="empty-message">Inicie una búsqueda para ver los resultados.</p>
+            )}
+          </main>
+        </>
+      )}
     </div>
   );
 }
