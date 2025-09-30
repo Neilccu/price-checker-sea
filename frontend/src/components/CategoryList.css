@@ -1,0 +1,20 @@
+/* src/components/CategoryList.css */
+.category-list-container {
+  margin: 20px 0;
+}
+.category-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.category-button {
+  background-color: #f0f0f0;
+  border: 1px solid #ccc;
+  border-radius: 20px;
+  padding: 8px 15px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+.category-button:hover {
+  background-color: #e0e0e0;
+}
